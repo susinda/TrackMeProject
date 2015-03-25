@@ -7,9 +7,9 @@
 	alert('aaaaaa');
         $.ajax({
             type: "POST",
-            url: "findMe.asmx/locateMe2",  
+            url: "http://localhost:9763/TrackMeProject_1.0.0/services/location",  
             crossDomain:true,
-            data: '{value1: ' + $("#txtValue1").val() + ', value2: ' + $("#txtValue2").val() + '}',
+            data: '{id: ' + $("#txtValue1").val() + '}',
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: OnSuccess,
