@@ -9,9 +9,73 @@
 
 
 <script type="text/javascript">
-  var directionDisplay;
-  var directionsService = new google.maps.DirectionsService();
-  var map;
+
+var lat = 6.915215;
+var lon = 79.859354;
+var directionDisplay;
+var directionsService = new google.maps.DirectionsService();
+var map;
+var marker;
+var start;
+
+function  responseCallback(responsseText)
+{
+var json = JSON.parse(responsseText);
+var result = json.Envelope.Body.viewResponse.return;
+result = result.substring(1, result.length - 1).split(",");
+alert(result);
+lon = result[0];
+lat = result[1];
+refreshMarker();
+}
+
+function httpGetAsync(theUrl, callback)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() { 
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+    xmlHttp.send(null);
+}
+
+
+function keep_alive() {//read position and mark it in the map
+   alert("keepalive");
+   httpGetAsync("http://146.148.86.166:8280/mapapi/1.0/getlocation", responseCallback);
+   setTimeout(keep_alive, 2000); //read every 10 seconds   
+}
+
+
+//refresh only the marker
+function refreshMarker() {
+   alert("refresh")
+   console.log("Found - LAT: ", lat, "LON: ", lon);
+   setTimeout( function(){ 
+    
+        marker.setPosition( new google.maps.LatLng( lat, lon ) );
+        //map.panTo( new google.maps.LatLng( 0, 0 ) );
+        
+    }, 1500 );
+
+   var newEnd = new google.maps.LatLng( lat, lon );
+   var request = {
+      origin:start, 
+      destination:newEnd,
+      travelMode: google.maps.DirectionsTravelMode.DRIVING
+    };
+    directionsService.route(request, function(response, status) {
+      if (status == google.maps.DirectionsStatus.OK) {
+        directionsDisplay.setDirections(response);
+        
+      }
+    });
+
+}
+
+
+
 
 function getParameterByName(name) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -25,7 +89,7 @@ function getParameterByName(name) {
   function initialize() {
     var location = getParameterByName('location');
     //alert(location);
-    var start = '6.915215, 79.859354';
+    start = '6.915215, 79.859354';
     var end = '6.901393, 79.858327';
     if (location == "colombo") {
 	start = '6.936250, 79.845224';
@@ -49,6 +113,16 @@ function getParameterByName(name) {
         
       }
     });
+
+    lat = 6.915215;
+    lon = 79.859354;
+    marker = new google.maps.Marker({
+		position: new google.maps.LatLng(lat, lon),
+		map: map
+     });
+   marker.setPosition(new google.maps.LatLng(lat, lon));//refresh marker
+   map.setCenter(new google.maps.LatLng(lat, lon));//resfresh center of the map
+   setTimeout(keep_alive, 2000); //read every 10 seconds
   }
 </script>
 </head>

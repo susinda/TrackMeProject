@@ -1,70 +1,95 @@
-<api name="admin--track" context="/track" version="1.0" version-type="url">
-        <resource methods="GET" url-mapping="/update">
-            <inSequence>
-                <property name="POST_TO_URI" value="true" scope="axis2"/>
-                <filter source="$ctx:AM_KEY_TYPE" regex="PRODUCTION">
-                    <then>
-                        <payloadFactory media-type="xml">
-                            <format>
-                                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:susi="http://susi.org/" xmlns:susi1="http://susi.org">
-				   <soapenv:Header/>
-				   <soapenv:Body>
-				      <susi:update>
-				         <susi1:id>2</susi1:id>
-				         <susi1:lat>3</susi1:lat>
-				         <susi1:lon>4</susi1:lon>
-				      </susi:update>
-				   </soapenv:Body>
-				</soapenv:Envelope>
-                            </format>
-                            <args/>
-                        </payloadFactory>
-                        <log level="full"/>
-                        <send>
-                            <endpoint>
-                                <address uri="http://127.0.0.1:9764/TrackMeProject_1.0.0/services/location" format="soap11"/>
-                            </endpoint>
-                        </send>
-                    </then>
-                    <else>
-                        <sequence key="_sandbox_key_error_"/>
-                    </else>
-                </filter>
-            </inSequence>
-            <outSequence>
-                <send/>
-            </outSequence>
-        </resource>
-        <resource methods="GET" url-mapping="/view">
-            <inSequence>
-                <property name="POST_TO_URI" value="true" scope="axis2"/>
-                <filter source="$ctx:AM_KEY_TYPE" regex="PRODUCTION">
-                    <then>
-                     <payloadFactory media-type="xml">
-                            <format>
-			 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:susi="http://susi.org/" xmlns:susi1="http://susi.org">
-			   <soapenv:Header/>
-			   <soapenv:Body>
-			      <susi:view>
-			         <susi1:id>?</susi1:id>
-			      </susi:view>
-			   </soapenv:Body>
-			</soapenv:Envelope>
-			 </payloadFactory>
-                            </format>
-                        <send>
-                            <endpoint>
-                                <address uri="http://127.0.0.1:9764/TrackMeProject_1.0.0/services/location" format="soap11"/>
-                            </endpoint>
-                        </send>
-                    </then>
-                    <else>
-                        <sequence key="_sandbox_key_error_"/>
-                    </else>
-                </filter>
-            </inSequence>
-            <outSequence>
-                <send/>
-            </outSequence>
-        </resource>
-</api>
+<api name="admin--mapapi"
+        context="/mapapi"
+        version="1.0"
+        version-type="url">
+      <resource methods="POST" url-mapping="/location" faultSequence="fault">
+         <inSequence>
+            <log level="full"/>
+            <filter source="$ctx:AM_KEY_TYPE" regex="PRODUCTION">
+               <then>
+                  <payloadFactory media-type="xml">
+                     <format>
+                        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                                          xmlns:susi="http://susi.org/"
+                                          xmlns:susi1="http://susi.org">
+                           <soapenv:Header/>
+                           <soapenv:Body>
+                              <susi:update>
+                                 <susi1:id>2</susi1:id>
+                                 <susi1:lat>$1</susi1:lat>
+                                 <susi1:lon>$2</susi1:lon>
+                              </susi:update>
+                           </soapenv:Body>
+                        </soapenv:Envelope>
+                     </format>
+                     <args>
+                        <arg evaluator="json" expression="$.location.lon"/>
+                        <arg evaluator="json" expression="$.location.lat"/>
+                     </args>
+                  </payloadFactory>
+                  <send>
+                     <endpoint name="admin--mapapi_APIproductionEndpoint_0">
+                        <address uri="http://146.148.86.166:9764/TrackMeProject/services/location"
+                                 format="soap11"/>
+                     </endpoint>
+                  </send>
+               </then>
+               <else>
+                  <sequence key="_sandbox_key_error_"/>
+               </else>
+            </filter>
+         </inSequence>
+         <outSequence>
+            <send/>
+         </outSequence>
+      </resource>
+      <resource methods="GET" url-mapping="/getlocation" faultSequence="fault">
+         <inSequence>
+            <log level="full"/>
+            <filter source="$ctx:AM_KEY_TYPE" regex="PRODUCTION">
+               <then>
+                  <payloadFactory media-type="xml">
+                     <format>
+                        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                                          xmlns:susi="http://susi.org/"
+                                          xmlns:susi1="http://susi.org">
+                           <soapenv:Header/>
+                           <soapenv:Body>
+                              <susi:view>
+                                 <susi1:id>2</susi1:id>
+                              </susi:view>
+                           </soapenv:Body>
+                        </soapenv:Envelope>
+                     </format>
+                     <args/>
+                  </payloadFactory>
+                  <send>
+                     <endpoint name="admin--mapapi_APIproductionEndpoint_0">
+                        <address uri="http://146.148.86.166:9764/TrackMeProject/services/location"
+                                 format="soap11"/>
+                     </endpoint>
+                  </send>
+               </then>
+               <else>
+                  <sequence key="_sandbox_key_error_"/>
+               </else>
+            </filter>
+         </inSequence>
+         <outSequence>
+            <property name="messageType" value="application/json" scope="axis2"/>
+            <send/>
+         </outSequence>
+      </resource>
+      <handlers>
+         <handler class="org.wso2.carbon.apimgt.gateway.handlers.security.APIAuthenticationHandler"/>
+         <handler class="org.wso2.carbon.apimgt.gateway.handlers.throttling.APIThrottleHandler">
+            <property name="id" value="A"/>
+            <property name="policyKey" value="gov:/apimgt/applicationdata/tiers.xml"/>
+         </handler>
+         <handler class="org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageHandler"/>
+         <handler class="org.wso2.carbon.apimgt.usage.publisher.APIMgtGoogleAnalyticsTrackingHandler">
+            <property name="configKey" value="gov:/apimgt/statistics/ga-config.xml"/>
+         </handler>
+         <handler class="org.wso2.carbon.apimgt.gateway.handlers.ext.APIManagerExtensionHandler"/>
+      </handlers>
+   </api>
