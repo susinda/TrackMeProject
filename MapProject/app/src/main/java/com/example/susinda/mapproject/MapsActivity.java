@@ -18,15 +18,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 
 public class MapsActivity extends FragmentActivity {
@@ -40,15 +40,17 @@ public class MapsActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
+        new sendPOSTTask().execute("http://146.148.86.166:8280/mapapi/1.0/location");
 
-        scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        scheduler.scheduleAtFixedRate
-                (new Runnable() {
-                    public void run() {
-                        new ReadWeatherJSONFeedTask().execute("http://146.148.86.166:8280/mapapi/1.0/getlocation");
-                    }
-                }, 15, 30, TimeUnit.SECONDS);
+       // scheduler = Executors.newSingleThreadScheduledExecutor();
+
+      // scheduler.scheduleAtFixedRate
+      //          (new Runnable() {
+      //              public void run() {
+      //                  new ReadWeatherJSONFeedTask().execute("http://146.148.86.166:8280/mapapi/1.0/getlocation");
+      //              }
+      //          }, 15, 30, TimeUnit.SECONDS);
     }
 
     @Override
@@ -94,6 +96,57 @@ public class MapsActivity extends FragmentActivity {
     private void setUpMap() {
         srilankaMarker = mMap.addMarker(new MarkerOptions().position(new LatLng(7.2, 79)).title("Susinda"));
 
+    }
+
+
+
+    public boolean sendPost(String url) {
+        boolean result = false;
+        HttpClient hc = new DefaultHttpClient();
+        String message;
+
+        HttpPost p = new HttpPost(url);
+        //{"location":{"lon":"80", "lat":"7"}}
+        JSONObject object = new JSONObject();
+        JSONObject rootJSON = new JSONObject();
+        try {
+
+            object.put("lon", "80");
+            object.put("lat", "7");
+            rootJSON.put("location",object);
+
+        } catch (Exception ex) {
+
+        }
+
+        try {
+            message = rootJSON.toString();
+            p.setEntity(new StringEntity(message, "UTF8"));
+            p.setHeader("Content-type", "application/json");
+            HttpResponse resp = hc.execute(p);
+            if (resp != null) {
+                if (resp.getStatusLine().getStatusCode() == 200) {
+                    result = true;
+                    HttpEntity entity = resp.getEntity();
+                    StringBuilder stringBuilder = new StringBuilder();
+                    InputStream inputStream = entity.getContent();
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(inputStream));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        stringBuilder.append(line);
+                    }
+                    inputStream.close();
+                }
+            }
+
+            Log.d("Status line", "" + resp.getStatusLine().getStatusCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+
+        return result;
     }
 
     public String readJSONFeed(String URL) {
@@ -155,4 +208,17 @@ public class MapsActivity extends FragmentActivity {
         }
     }
 
+
+    private class sendPOSTTask extends AsyncTask<String, Void, Boolean> {
+        protected Boolean doInBackground(String... urls) {
+            return sendPost(urls[0]);
+        }
+
+        protected void onPostExecute(Boolean result1) {
+            //Log.d("result " , result1);
+        }
+
+    }
+
 }
+
